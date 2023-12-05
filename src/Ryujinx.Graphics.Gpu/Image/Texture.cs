@@ -792,6 +792,15 @@ namespace Ryujinx.Graphics.Gpu.Image
             // - BC4/BC5 is not supported on 3D textures.
             if (!_context.Capabilities.SupportsAstcCompression && Format.IsAstc())
             {
+                int hashCode = 0;
+                foreach (byte c in result.ToArray()) {
+                    hashCode = hashCode * 277 + c;
+                }
+                String cachePath = $"./textureCache/{hashCode:X}";
+                if (System.IO.File.Exists(cachePath)) {
+                    return System.IO.File.ReadAllBytes(cachePath);
+                }
+                
                 if (!AstcDecoder.TryDecodeToRgba8P(
                     result.ToArray(),
                     Info.FormatInfo.BlockWidth,
@@ -812,6 +821,8 @@ namespace Ryujinx.Graphics.Gpu.Image
                 {
                     decoded = BCnEncoder.EncodeBC7(decoded, width, height, sliceDepth, levels, layers);
                 }
+
+                System.IO.File.WriteAllBytes(cachePath, decoded);
 
                 result = decoded;
             }
